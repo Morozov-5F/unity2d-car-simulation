@@ -62,17 +62,16 @@ public class WheelBehaviour : MonoBehaviour
         body.AddForce(transform.right * 50 + transform.up * 100);
     }
 
-    void FixedUpdate ()
+    public void UpdateFriction()
     {
-        // Убираем боковую скорость
         var impulse = body.mass * -LateralVelocity;
         // if (impulse.magnitude > SkidRatio)
         // {
         //     impulse *= SkidRatio / impulse.magnitude;
         // }
-        Debug.Log(gameObject.name + LateralVelocity);
+        Debug.Log("Before: " + gameObject.name + LateralVelocity);
         body.AddForce(impulse, ForceMode2D.Impulse);
-        Debug.Log(gameObject.name + LateralVelocity);
+        Debug.Log("After: " + gameObject.name + LateralVelocity);
         // Убиваем вращение
         body.AddTorque(0.1f * body.inertia * -body.angularVelocity);
         // Применяем трение
@@ -84,9 +83,9 @@ public class WheelBehaviour : MonoBehaviour
         Vector3 red = LateralVelocity;
         Vector3 green = ForwardVelocity;
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + red);
+        // Gizmos.DrawLine(transform.position, transform.position + red);
         Gizmos.color = Color.green;
-        Gizmos.DrawLine(transform.position, transform.position + green);
+        // Gizmos.DrawLine(transform.position, transform.position + green);
     }
 
     public void ApplyTorque(float torque)

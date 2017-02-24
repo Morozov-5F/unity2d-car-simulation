@@ -21,14 +21,17 @@ public class CarPhysicsController : MonoBehaviour
     public int TurnRatio = 0;
     public float MaxTurnAngle = 45;
 
-    public List<GameObject> FrontWheels;
-    public List<GameObject> RearWheels;
+    public List<WheelBehaviour> FrontWheels;
+    public List<WheelBehaviour> RearWheels;
+
+    public List<WheelBehaviour> Wheels;
+
     public WheelDrive WheelDrive;
 
     private Rigidbody2D body;
     public float CurrentTorque;
 
-    private List<GameObject> DrivingWheels
+    private List<WheelBehaviour> DrivingWheels
     {
         get
         {
@@ -39,6 +42,11 @@ public class CarPhysicsController : MonoBehaviour
     void Start ()
     {
         body = GetComponent<Rigidbody2D>();
+
+        Wheels = new List<WheelBehaviour>(4);
+        Wheels.AddRange(FrontWheels);
+        Wheels.AddRange(RearWheels);
+
         CurrentTorque = 0;
     }
 
@@ -53,17 +61,20 @@ public class CarPhysicsController : MonoBehaviour
         Vector2 airDrag  = -body.velocity * AirDragRatio * body.velocity.magnitude;
         body.AddForce(airDrag, ForceMode2D.Force);
 
-        foreach(var wheel in FrontWheels)
+        foreach (var wheel in FrontWheels)
         {
-            var wheelController = wheel.GetComponent<WheelBehaviour>();
-            wheelController.Rotate(TurnRatio);
+            wheel.Rotate(TurnRatio);
         }
 
-        foreach(var wheel in DrivingWheels)
+        foreach (var wheel in DrivingWheels)
         {
-            var wheelController = wheel.GetComponent<WheelBehaviour>();
             CurrentTorque = Mathf.Lerp(CurrentTorque, MaxTorque * AccelerationRatio, 0.01f);
-            wheelController.ApplyTorque(CurrentTorque);
+            wheel.ApplyTorque(CurrentTorque);
+        }
+
+        foreach (var wheel in Wheels)
+        {
+            wheel.UpdateFriction();
         }
     }
 }
