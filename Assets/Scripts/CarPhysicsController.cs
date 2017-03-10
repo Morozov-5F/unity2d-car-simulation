@@ -2,79 +2,71 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum WheelDrive
-{
-    FrontWheels,
-    RearWheels
-};
-
 public class CarPhysicsController : MonoBehaviour
 {
-    public float MaxTorque = 1000;
+    private float engineSpeed;
+    private float steeringAngle;
 
-    public float AirDragRatio = 10;
-    public float RoadDragRatio = 300;
+    public List<WheelController> wheels;
+    public float MaxEngineTorque = 0.0001f;
 
-    public float AccelerationRatio = 0;
-    public float BrakeRatio = 1000;
-
-    public int TurnRatio = 0;
-    public float MaxTurnAngle = 45;
-
-    public List<WheelBehaviour> FrontWheels;
-    public List<WheelBehaviour> RearWheels;
-
-    public List<WheelBehaviour> Wheels;
-
-    public WheelDrive WheelDrive;
-
-    private Rigidbody2D body;
-    public float CurrentTorque;
-
-    private List<WheelBehaviour> DrivingWheels
+    void Start()
     {
-        get
+        GetComponent<Rigidbody2D>().AddForce(new Vector2(0, 10));
+    }
+
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.W))
         {
-            return (WheelDrive == WheelDrive.FrontWheels) ? FrontWheels : RearWheels;
+            engineSpeed = MaxEngineTorque;
         }
-    }
-
-    void Start ()
-    {
-        body = GetComponent<Rigidbody2D>();
-
-        Wheels = new List<WheelBehaviour>(4);
-        Wheels.AddRange(FrontWheels);
-        Wheels.AddRange(RearWheels);
-
-        CurrentTorque = 0;
-    }
-
-    void Update ()
-    {
-
+        else if (Input.GetKey(KeyCode.S))
+        {
+            engineSpeed = -MaxEngineTorque;
+        }
+        else
+        {
+            engineSpeed = 0;
+        }
+        if (Input.GetKey(KeyCode.A))
+        {
+            steeringAngle = -30;
+        }
+        else if (Input.GetKey(KeyCode.D))
+        {
+            steeringAngle = 30;
+        }
+        else
+        {
+            steeringAngle = 0;
+        }
     }
 
     void FixedUpdate()
     {
-        // Сопротивление вохдуха
-        Vector2 airDrag  = -body.velocity * AirDragRatio * body.velocity.magnitude;
-        body.AddForce(airDrag, ForceMode2D.Force);
+        JointMotor2D rotateMotor = new JointMotor2D();
 
-        foreach (var wheel in FrontWheels)
+        foreach (var cW in wheels)
         {
-            wheel.Rotate(TurnRatio);
+            cW.killOrthogonalVelocity();
         }
 
-        foreach (var wheel in DrivingWheels)
+        for (int i = 0; i < 2; i++)
         {
-            CurrentTorque = Mathf.Lerp(CurrentTorque, MaxTorque * AccelerationRatio, 0.01f);
-            wheel.ApplyTorque(CurrentTorque);
-        }
+            var direction = wheels[i].transform.up;
+            direction *= engineSpeed;
 
-        foreach (var wheel in Wheels)
-        {
-            wheel.UpdateFriction();
+            wheels[i].GetComponent<Rigidbody2D>().AddForce(direction,
+                                                           ForceMode2D.Force);
+
+            var mspeed =
+               steeringAngle - wheels[i].GetComponent<HingeJoint2D>().jointAngle;
+            rotateMotor.motorSpeed = mspeed * 2f;
+            Debug.Log(mspeed);
+            rotateMotor.maxMotorTorque = 300;
+            wheels[i].GetComponent<HingeJoint2D>().motor = rotateMotor;
+            wheels[i].GetComponent<HingeJoint2D>().useMotor = true;
         }
     }
 }
